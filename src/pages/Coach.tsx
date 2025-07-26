@@ -69,7 +69,6 @@ const Coach = () => {
 
         {/* Chat Feed */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-foreground">Chat</h2>
           <Card className="p-4 h-96 overflow-y-auto">
             <div className="space-y-4">
               {chatMessages.map((msg) => (
