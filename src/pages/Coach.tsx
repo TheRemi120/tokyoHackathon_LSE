@@ -71,7 +71,7 @@ const Coach = () => {
         {/* Chat Feed */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-foreground">Chat</h2>
-          <Card className="p-4 h-64 overflow-y-auto">
+          <Card className="p-4 h-80 overflow-y-auto">
             <div className="space-y-4">
               {chatMessages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.isAI ? 'justify-start' : 'justify-end'}`}>
