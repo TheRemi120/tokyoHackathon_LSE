@@ -56,7 +56,6 @@ const Coach = () => {
       <div className="p-4 space-y-6">
         {/* Today's Insights */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-foreground">Today's Insights</h2>
           <div className="grid grid-cols-3 gap-3">
             {insights.map(({ icon: Icon, value, label }, i) => (
               <Card key={i} className="p-3 text-center h-20 flex flex-col justify-center">
@@ -71,7 +70,7 @@ const Coach = () => {
         {/* Chat Feed */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-foreground">Chat</h2>
-          <Card className="p-4 h-80 overflow-y-auto">
+          <Card className="p-4 h-96 overflow-y-auto">
             <div className="space-y-4">
               {chatMessages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.isAI ? 'justify-start' : 'justify-end'}`}>
