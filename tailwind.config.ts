@@ -61,7 +61,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'blue-glass': 'hsl(var(--blue-glass))',
+				'blue-light': 'hsl(var(--blue-light))',
+				'yellow-warning': 'hsl(var(--yellow-warning))',
+				'green-success': 'hsl(var(--green-success))',
+				'glass-bg': 'hsl(var(--glass-bg))'
+			},
+			fontFamily: {
+				'sf': ['-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Helvetica Neue', 'sans-serif']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
