@@ -1,9 +1,47 @@
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { RunCard } from "@/components/RunCard";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, Clock, Zap, Award } from "lucide-react";
+import { TrendingUp, Clock, Zap, Award, Settings } from "lucide-react";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const ActivityLog = () => {
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "Impossible de charger le profil.",
+          });
+          return;
+        }
+
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchProfile();
+  }, [toast]);
+
   const weekSummary = {
     totalRuns: 4,
     totalDistance: "18.2 km",
@@ -79,9 +117,22 @@ const ActivityLog = () => {
     { icon: Award, label: "Best Split", value: weekSummary.bestSplit }
   ];
 
+  const handleProfileUpdate = (updatedProfile: any) => {
+    setUserProfile(updatedProfile);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20 font-sf">
-      <Header title="Activity Log" />
+      <Header 
+        title="Activity Log" 
+        rightIcon={
+          <Settings 
+            size={20} 
+            onClick={() => setProfileDialogOpen(true)}
+            className="cursor-pointer" 
+          />
+        }
+      />
       
       <div className="p-4 space-y-6">
         {/* This Week's Summary */}
@@ -111,6 +162,13 @@ const ActivityLog = () => {
           </div>
         </div>
       </div>
+
+      <UserProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        profile={userProfile}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };
