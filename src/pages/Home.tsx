@@ -1,8 +1,13 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { RunCard } from "@/components/RunCard";
 import { Card } from "@/components/ui/card";
-import { Volume2, TrendingUp, Moon, Heart, AlertCircle, CheckCircle } from "lucide-react";
+import { Volume2, TrendingUp, Moon, Heart, AlertCircle, CheckCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { User, Session } from "@supabase/supabase-js";
 
 // Mock data
 const pendingRuns = [
@@ -33,6 +38,54 @@ const weeklyStats = [
 ];
 
 const Home = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session?.user) {
+          navigate("/auth");
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (!session?.user) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de se déconnecter.",
+      });
+    } else {
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté.",
+      });
+      navigate("/auth");
+    }
+  };
+
   const handleRecordDebrief = (id: string) => {
     console.log("Recording debrief for run:", id);
   };
@@ -41,9 +94,24 @@ const Home = () => {
     console.log("Typing debrief for run:", id);
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20 font-sf">
-      <Header title="Home" />
+      <Header 
+        title="Home" 
+        rightIcon={
+          <LogOut size={16} onClick={handleSignOut} className="cursor-pointer" />
+        } 
+      />
       
       <div className="p-4 space-y-6">
         {/* Pending Debriefs */}

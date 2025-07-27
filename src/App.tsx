@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Planning from "./pages/Planning";
 import Coach from "./pages/Coach";
 import ActivityLog from "./pages/ActivityLog";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/planning" element={<Planning />} />
             <Route path="/coach" element={<Coach />} />
             <Route path="/activity" element={<ActivityLog />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
