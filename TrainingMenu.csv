@@ -1,0 +1,26 @@
+﻿Training ID,Training Category,Training Menu
+WU01,Warm-up,Full-body joint mobility 5 min: ankles・hips・thoracic spine light
+WU02,Warm-up,Dynamic stretching 8 min: leg swings・lunges・trunk rotations moderate
+WU03,Warm-up,Running drills A-skip・B-skip・butt kicks 30 m ×2 each normal
+WU04,Warm-up,Progressive jog 5–10 min HR Z2→Z3 energetic
+WU05,Warm-up,100 m strides 4–6 reps; walk rest; technique focus intense
+END01,Endurance,Easy jog 20–30 min HR Z2 light
+END02,Endurance,Long jog 45–60 min Z2 moderate
+END03,Endurance,Tempo run 15–20 min Z3; conversational but somewhat hard normal
+END04,Endurance,Threshold run 8–12 min ×2; rest 2–3 min; Z3.5–4 energetic
+END05,Endurance,Alternating pace run 45 min: alternate 5 min Z2 / 5 min Z3 intense
+STR01,Strength,Core circuit plank 30 s・side plank 30 s ×2; 2 rounds light
+STR02,Strength,Hip hinge & abduction glute bridge 12×3・clamshell 15×3 moderate
+STR03,Strength,Split squats 10/side ×3 + calf raises 20×3 normal
+STR04,Strength,Step-ups box height 30–40 cm 10×3 + dead bug 10×3 energetic
+STR05,Strength,Plyometrics box jumps 8×3 + bounding 30 m ×4 intense
+FORM01,Running Form,Wall-lean drill 10 s ×6; feel forward center of mass light
+FORM02,Running Form,Cadence drill metronome 170–180 bpm for 30 s ×6; interspersed with jog moderate
+FORM03,Running Form,Midfoot strike line runs 50 m ×6; upright posture・eyes forward normal
+FORM04,Running Form,Arm-swing control drill alternate one-hand hip touch 30 s ×6 + 50 m run energetic
+FORM05,Running Form,Downhill form practice 2–3% gentle slope 60 m ×6; prioritize cadence intense
+BRE01,Breathing,Diaphragmatic breathing supine inhale 4 s / exhale 6 s ×10 light
+BRE02,Breathing,Nasal-breathing walk 10 min; conversational moderate
+BRE03,Breathing,During jog inhale 3 steps / exhale 3 steps 10 min normal
+BRE04,Breathing,During tempo inhale 2 steps / exhale 2 steps 8 min energetic
+BRE05,Breathing,During hill sprints inhale 2 steps / exhale 1 step 80 m ×6; walk rest intense
