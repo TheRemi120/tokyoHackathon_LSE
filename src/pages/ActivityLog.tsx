@@ -33,6 +33,7 @@ const ActivityLog = () => {
           return;
         }
 
+        console.log('Profile fetched:', data);
         setUserProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
