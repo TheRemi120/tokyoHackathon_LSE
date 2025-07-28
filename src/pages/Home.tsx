@@ -3,33 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { RunCard } from "@/components/RunCard";
+import { ReviewDiv } from "@/components/ReviewDiv";
 import { Card } from "@/components/ui/card";
 import { Volume2, TrendingUp, Moon, Heart, AlertCircle, CheckCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
-
-// Mock data
-const pendingRuns = [
-  {
-    id: "1",
-    title: "Morning Run",
-    date: "Jan 24, 7:00 AM",
-    distance: "5.0 km",
-    duration: "24:32",
-    pace: "4:54/km",
-    isDebriefed: false
-  },
-  {
-    id: "2", 
-    title: "Easy Recovery",
-    date: "Jan 22, 6:30 PM",
-    distance: "3.2 km",
-    duration: "18:45",
-    pace: "5:51/km",
-    isDebriefed: false
-  }
-];
+import { Activity, formatDuration, formatDistance, calculatePace } from "@/types/Activity";
 
 const weeklyStats = [
   { icon: TrendingUp, label: "Steps", value: "8,432", status: "good" },
@@ -40,6 +20,8 @@ const weeklyStats = [
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,6 +34,8 @@ const Home = () => {
         
         if (!session?.user) {
           navigate("/auth");
+        } else {
+          fetchActivities(session.user.id);
         }
       }
     );
@@ -63,11 +47,40 @@ const Home = () => {
       
       if (!session?.user) {
         navigate("/auth");
+      } else {
+        fetchActivities(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const fetchActivities = async (userId: string) => {
+    try {
+      setLoadingActivities(true);
+      
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger les activités.",
+        });
+        return;
+      }
+
+      setActivities(data || []);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -86,13 +99,16 @@ const Home = () => {
     }
   };
 
-  const handleRecordDebrief = (id: string) => {
-    console.log("Recording debrief for run:", id);
+  const handleActivityReviewed = (updatedActivity: Activity) => {
+    setActivities(prev => 
+      prev.map(activity => 
+        activity.id === updatedActivity.id ? updatedActivity : activity
+      )
+    );
   };
 
-  const handleTypeDebrief = (id: string) => {
-    console.log("Typing debrief for run:", id);
-  };
+  // Filter activities that need review
+  const unreviewed = activities.filter(activity => !activity.reviewed);
 
   if (!user) {
     return (
@@ -114,25 +130,55 @@ const Home = () => {
       />
       
       <div className="p-4 space-y-6">
-        {/* Pending Debriefs */}
-        {pendingRuns.length > 0 ? (
+        {/* Pending Reviews */}
+        {loadingActivities ? (
+          <Card className="p-6 text-center">
+            <p className="text-muted-foreground">Chargement des activités...</p>
+          </Card>
+        ) : unreviewed.length > 0 ? (
           <div>
-            <h2 className="text-lg font-semibold mb-4 text-foreground">Pending Debriefs</h2>
-            {pendingRuns.map((run) => (
-              <RunCard
-                key={run.id}
-                {...run}
-                isPending={true}
-                onRecordDebrief={handleRecordDebrief}
-                onTypeDebrief={handleTypeDebrief}
-              />
-            ))}
+            <h2 className="text-lg font-semibold mb-4 text-foreground">Activités à commenter</h2>
+            <div className="space-y-4">
+              {unreviewed.map((activity) => (
+                <div key={activity.id} className="space-y-3">
+                  <Card className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium text-foreground">Course du {new Date(activity.created_at).toLocaleDateString('fr-FR')}</h3>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(activity.created_at).toLocaleTimeString('fr-FR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Distance</p>
+                        <p className="font-medium">{formatDistance(activity.distance)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Durée</p>
+                        <p className="font-medium">{formatDuration(activity.time)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Allure</p>
+                        <p className="font-medium">{calculatePace(activity.time, activity.distance)}</p>
+                      </div>
+                    </div>
+                  </Card>
+                  <ReviewDiv 
+                    activity={activity} 
+                    onReviewSubmitted={handleActivityReviewed}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <Card className="p-6 text-center">
             <CheckCircle className="mx-auto mb-2 text-green-success" size={24} />
-            <p className="text-foreground font-medium">All caught up!</p>
-            <p className="text-sm text-muted-foreground">No pending debriefs</p>
+            <p className="text-foreground font-medium">Toutes les activités sont commentées !</p>
+            <p className="text-sm text-muted-foreground">Aucune activité en attente de commentaire</p>
           </Card>
         )}
 
