@@ -10,9 +10,9 @@ export const Header = ({ title, rightIcon = <Settings size={20} /> }: HeaderProp
   return (
     <div className="flex items-center justify-between p-4 bg-background border-b border-border">
       <h1 className="text-xl font-semibold text-foreground font-sf">{title}</h1>
-      <Button variant="ghost" size="sm" className="p-2">
+      <div>
         {rightIcon}
-      </Button>
+      </div>
     </div>
   );
 };
