@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Mic, Send } from "lucide-react";
+import { MessageSquare, Mic, Send, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Activity } from "@/types/Activity";
 import { useSTT } from "@/hooks/useSTT";
+import { useHFLLM } from "@/hooks/useHFLLM";
 
 interface ReviewDivProps {
   activity: Activity;
@@ -16,7 +17,9 @@ interface ReviewDivProps {
 export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
   const { startRecording, stopRecording, isRecording, transcript } = useSTT();
+  const { processText } = useHFLLM();
   const { toast } = useToast();
 
   const handleSubmitReview = async () => {
@@ -72,6 +75,45 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
     }
   };
 
+  // Enhanced AI processing function for manual reviews
+  const handleAIStructure = async () => {
+    if (!review.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez écrire du texte avant de demander la structuration IA.",
+      });
+      return;
+    }
+
+    try {
+      setAiProcessing(true);
+      const result = await processText(review);
+      
+      if (result.success && result.processedText) {
+        setReview(result.processedText);
+        toast({
+          title: "Texte structuré",
+          description: "Votre commentaire a été structuré en points clés par l'IA.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur IA",
+          description: "Impossible de structurer le texte. Veuillez réessayer.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur s'est produite lors du traitement IA.",
+      });
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
   useEffect(() => {
     if (transcript) {
       setReview(prev => prev + (prev ? ' ' : '') + transcript);
@@ -109,7 +151,7 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
             variant="outline"
             size="sm"
             onClick={startVoiceRecording}
-            disabled={loading}
+            disabled={loading || aiProcessing}
             className="flex items-center gap-2"
           >
             <Mic size={16} />
@@ -117,8 +159,19 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
           </Button>
           
           <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAIStructure}
+            disabled={loading || aiProcessing || !review.trim()}
+            className="flex items-center gap-2"
+          >
+            <Brain size={16} />
+            {aiProcessing ? "IA..." : "Structurer"}
+          </Button>
+          
+          <Button
             onClick={handleSubmitReview}
-            disabled={loading || !review.trim()}
+            disabled={loading || aiProcessing || !review.trim()}
             className="flex items-center gap-2 ml-auto"
             size="sm"
           >
