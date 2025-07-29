@@ -16,8 +16,10 @@ export function useHFLLM() {
 
     try {
       const API_KEY =
-        import.meta.env.VITE_HF_TOKEN ||
-        (typeof process !== 'undefined' ? process.env.REACT_APP_HF_TOKEN : undefined);
+        typeof process !== 'undefined'
+          ? process.env.REACT_APP_HF_TOKEN ?? import.meta.env.VITE_HF_TOKEN
+          : import.meta.env.VITE_HF_TOKEN;
+
       
       if (!API_KEY) {
         throw new Error('Hugging Face API key missing');

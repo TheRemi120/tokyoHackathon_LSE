@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { RunCard } from "@/components/RunCard";
 import { ReviewDiv } from "@/components/ReviewDiv";
 import { ReviewActivityButton } from "@/components/ReviewActivityButton";
+import { SessionRecorder } from "@/components/SessionRecorder";
 import { Card } from "@/components/ui/card";
 import { Volume2, TrendingUp, Moon, Heart, AlertCircle, CheckCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const Home = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [activityLogs, setActivityLogs] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -116,6 +118,9 @@ const Home = () => {
     });
   };
 
+  const handleAddLog = (entry: string) => {
+    setActivityLogs(prev => [entry, ...prev]);
+  };
 
   // Filter activities that need review
   const unreviewed = activities.filter(activity => !activity.reviewed);
@@ -206,12 +211,29 @@ const Home = () => {
           </p>
         </Card>
 
+        {/* Record session with STT/LLM */}
+        <SessionRecorder onAddLog={handleAddLog} />
+
         {/* Review Activity Button */}
         {user && (
           <ReviewActivityButton
             userId={user.id}
             onActivityAdded={handleActivityAdded}
           />
+        )}
+
+        {/* Activity logs */}
+        {activityLogs.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4 text-foreground">Activity logs</h2>
+            <Card className="p-4 space-y-2">
+              {activityLogs.map((log, i) => (
+                <div key={i} className="text-sm text-foreground whitespace-pre-line">
+                  {log}
+                </div>
+              ))}
+            </Card>
+          </div>
         )}
 
         {/* This Week's Summary */}

@@ -3,6 +3,7 @@ import { transcribeAudio } from '@/integrations/elevenlabs/stt';
 
 export function useSTT() {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -21,12 +22,15 @@ export function useSTT() {
 
     recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+      setIsTranscribing(true);
       try {
         const result = await transcribeAudio(blob);
         setTranscript(result.text);
       } catch (err) {
         console.error('Error during transcription:', err);
         setTranscript(null);
+      } finally {
+        setIsTranscribing(false);
       }
     };
 
@@ -41,5 +45,5 @@ export function useSTT() {
     }
   };
 
-  return { startRecording, stopRecording, isRecording, transcript };
+  return { startRecording, stopRecording, isRecording, isTranscribing, transcript };
 }
