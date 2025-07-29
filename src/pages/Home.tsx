@@ -122,7 +122,6 @@ const Home = () => {
     setActivityLogs(prev => [entry, ...prev]);
   };
 
-
   // Filter activities that need review
   const unreviewed = activities.filter(activity => !activity.reviewed);
 
