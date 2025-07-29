@@ -12,7 +12,8 @@ export async function transcribeAudio(audio: Blob): Promise<STTResponse> {
   }
 
   const formData = new FormData();
-  formData.append('audio', audio, 'recording.webm');
+  formData.append('file', audio, 'recording.webm');
+  formData.append('model_id', 'scribe_v1');
 
   const response = await fetch(ELEVENLABS_STT_ENDPOINT, {
     method: 'POST',
@@ -23,7 +24,9 @@ export async function transcribeAudio(audio: Blob): Promise<STTResponse> {
   });
 
   if (!response.ok) {
-    throw new Error(`STT failed with status ${response.status}`);
+    const errorText = await response.text();
+    console.error('STT API Error:', errorText);
+    throw new Error(`STT failed with status ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();

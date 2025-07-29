@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { RunCard } from "@/components/RunCard";
 import { ReviewDiv } from "@/components/ReviewDiv";
+import { ReviewActivityButton } from "@/components/ReviewActivityButton";
 import { Card } from "@/components/ui/card";
 import { Volume2, TrendingUp, Moon, Heart, AlertCircle, CheckCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,14 @@ const Home = () => {
     );
   };
 
+  const handleActivityAdded = (newActivity: Activity) => {
+    setActivities(prev => [newActivity, ...prev]);
+    toast({
+      title: "Nouvelle activité",
+      description: "Votre session a été ajoutée avec succès.",
+    });
+  };
+
   // Filter activities that need review
   const unreviewed = activities.filter(activity => !activity.reviewed);
 
@@ -195,6 +204,14 @@ const Home = () => {
             Consider adding a tempo run to your schedule for next week to build speed endurance.
           </p>
         </Card>
+
+        {/* Review Activity Button */}
+        {user && (
+          <ReviewActivityButton
+            userId={user.id}
+            onActivityAdded={handleActivityAdded}
+          />
+        )}
 
         {/* This Week's Summary */}
         <div>

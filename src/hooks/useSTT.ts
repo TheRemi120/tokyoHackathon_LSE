@@ -9,7 +9,9 @@ export function useSTT() {
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
+    const recorder = new MediaRecorder(stream, {
+      mimeType: 'audio/webm;codecs=opus'
+    });
     recorderRef.current = recorder;
     chunksRef.current = [];
 
@@ -18,12 +20,13 @@ export function useSTT() {
     };
 
     recorder.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
       try {
         const result = await transcribeAudio(blob);
         setTranscript(result.text);
       } catch (err) {
-        console.error(err);
+        console.error('Error during transcription:', err);
+        setTranscript(null);
       }
     };
 
