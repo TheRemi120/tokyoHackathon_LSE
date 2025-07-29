@@ -1,0 +1,5 @@
+gtts==2.3.2
+elevenlabs==0.2.27
+flask==2.3.3
+flask-cors==4.0.0
+pandas==2.0.3

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,6 +6,7 @@ import { MessageSquare, Mic, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Activity } from "@/types/Activity";
+import { useSTT } from "@/hooks/useSTT";
 
 interface ReviewDivProps {
   activity: Activity;
@@ -15,7 +16,7 @@ interface ReviewDivProps {
 export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const { startRecording, stopRecording, isRecording, transcript } = useSTT();
   const { toast } = useToast();
 
   const handleSubmitReview = async () => {
@@ -71,44 +72,17 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
     }
   };
 
+  useEffect(() => {
+    if (transcript) {
+      setReview(prev => prev + (prev ? ' ' : '') + transcript);
+    }
+  }, [transcript]);
+
   const startVoiceRecording = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setReview(prev => prev + (prev ? ' ' : '') + transcript);
-      };
-
-      recognition.onerror = () => {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible d'utiliser la reconnaissance vocale.",
-        });
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
+    if (isRecording) {
+      stopRecording();
     } else {
-      toast({
-        variant: "destructive",
-        title: "Non supporté",
-        description: "La reconnaissance vocale n'est pas supportée sur ce navigateur.",
-      });
+      startRecording();
     }
   };
 
@@ -135,11 +109,11 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
             variant="outline"
             size="sm"
             onClick={startVoiceRecording}
-            disabled={loading || isListening}
+            disabled={loading}
             className="flex items-center gap-2"
           >
             <Mic size={16} />
-            {isListening ? "Écoute..." : "Vocal"}
+            {isRecording ? "Stop" : "Vocal"}
           </Button>
           
           <Button
@@ -156,11 +130,3 @@ export const ReviewDiv = ({ activity, onReviewSubmitted }: ReviewDivProps) => {
     </Card>
   );
 };
-
-// Type declaration for Speech Recognition
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}
