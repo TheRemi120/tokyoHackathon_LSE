@@ -116,6 +116,7 @@ const Home = () => {
     });
   };
 
+
   // Filter activities that need review
   const unreviewed = activities.filter(activity => !activity.reviewed);
 
