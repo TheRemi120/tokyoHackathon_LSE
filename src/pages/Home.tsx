@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
 import { Activity, formatDuration, formatDistance, calculatePace } from "@/types/Activity";
+import { fetchMotivation } from "@/integrations/mistral/client";
 
 const weeklyStats = [
   { icon: TrendingUp, label: "Steps", value: "8,432", status: "good" },
@@ -22,6 +23,8 @@ const Home = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [coachMessage, setCoachMessage] = useState("");
+  const [loadingCoachMessage, setLoadingCoachMessage] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -81,6 +84,21 @@ const Home = () => {
       setLoadingActivities(false);
     }
   };
+
+  useEffect(() => {
+    const getMotivation = async () => {
+      try {
+        const msg = await fetchMotivation();
+        setCoachMessage(msg);
+      } catch (e) {
+        console.error("Error fetching motivation", e);
+      } finally {
+        setLoadingCoachMessage(false);
+      }
+    };
+
+    getMotivation();
+  }, []);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -191,8 +209,7 @@ const Home = () => {
             </Button>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
-            Great job on your consistency this week! Your recovery metrics look good. 
-            Consider adding a tempo run to your schedule for next week to build speed endurance.
+            {loadingCoachMessage ? "Chargement..." : coachMessage}
           </p>
         </Card>
 
