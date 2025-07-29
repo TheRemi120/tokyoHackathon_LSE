@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const ActivityLog = () => {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState<Record<string, unknown> | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -118,7 +118,7 @@ const ActivityLog = () => {
     { icon: Award, label: "Best Split", value: weekSummary.bestSplit }
   ];
 
-  const handleProfileUpdate = (updatedProfile: any) => {
+  const handleProfileUpdate = (updatedProfile: Record<string, unknown>) => {
     setUserProfile(updatedProfile);
   };
 

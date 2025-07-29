@@ -172,7 +172,7 @@ const SignInForm = ({
   onSignIn, 
   loading 
 }: { 
-  onSignIn: (email: string, password: string) => Promise<{ error: any }>;
+  onSignIn: (email: string, password: string) => Promise<{ error: unknown }>;
   loading: boolean;
 }) => {
   const [email, setEmail] = useState("");
@@ -216,7 +216,7 @@ const SignUpForm = ({
   onSignUp, 
   loading 
 }: { 
-  onSignUp: (email: string, password: string, nom: string, dateNaissance: string, poids?: string) => Promise<{ error: any }>;
+  onSignUp: (email: string, password: string, nom: string, dateNaissance: string, poids?: string) => Promise<{ error: unknown }>;
   loading: boolean;
 }) => {
   const [email, setEmail] = useState("");
