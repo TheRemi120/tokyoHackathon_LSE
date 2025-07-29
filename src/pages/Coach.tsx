@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TrendingUp, Scale, Target, Mic, Send, BarChart3, FileText, Trophy, Shield } from "lucide-react";
 import { useState } from "react";
+import { generateCoachReply } from "@/integrations/huggingSmile/client";
 
 const Coach = () => {
   const [message, setMessage] = useState("");
@@ -21,7 +22,7 @@ const Coach = () => {
     { icon: Shield, label: "Injury prevention" }
   ];
 
-  const chatMessages = [
+  const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
       isAI: true,
@@ -40,12 +41,40 @@ const Coach = () => {
       message: "That's excellent! Based on your recovery metrics, you're ready for today's tempo session. Remember to warm up properly and keep the first 2km easy.",
       timestamp: "10:33 AM"
     }
-  ];
+  ]);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      console.log("Sending message:", message);
-      setMessage("");
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const userMsg = {
+      id: Date.now(),
+      isAI: false,
+      message,
+      timestamp
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    setMessage('');
+
+    try {
+      const reply = await generateCoachReply(message);
+      const aiMsg = {
+        id: Date.now() + 1,
+        isAI: true,
+        message: reply,
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+      setChatMessages(prev => [...prev, aiMsg]);
+    } catch (error) {
+      console.error('HuggingSmile API error', error);
     }
   };
 
