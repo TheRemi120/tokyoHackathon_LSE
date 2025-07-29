@@ -21,9 +21,8 @@ export function useHFLLM() {
         throw new Error('Hugging Face API key missing');
       }
 
-      // Use the new Hugging Face Inference Providers API with chat completions format
       const response = await fetch(
-        'https://router.huggingface.co/v1/chat/completions',
+        'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
         {
           method: 'POST',
           headers: {
@@ -31,23 +30,8 @@ export function useHFLLM() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'meta-llama/Llama-3.1-8B-Instruct',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a helpful assistant that structures text into clear, concise bullet points. Focus on the main ideas and make them easy to read.'
-              },
-              {
-                role: 'user',
-                content: `Please structure this text and make the ideas concise in bullet points:
-
-${transcript}`
-              }
-            ],
-            max_tokens: 500,
-            temperature: 0.7,
-            top_p: 0.9,
-          }),
+            inputs: `Structure this text and make the ideas concise in bullet points.\n${transcript}`
+          })
         }
       );
 
@@ -58,13 +42,13 @@ ${transcript}`
       }
 
       const data = await response.json();
-      
-      // Handle chat completions response format
+
+      // Handle inference API response format
       let processedText: string;
-      if (data.choices && data.choices.length > 0) {
-        processedText = data.choices[0].message?.content || '';
-      } else if (data.message?.content) {
-        processedText = data.message.content;
+      if (Array.isArray(data) && data[0]?.generated_text) {
+        processedText = data[0].generated_text;
+      } else if (data.generated_text) {
+        processedText = data.generated_text;
       } else if (typeof data === 'string') {
         processedText = data;
       } else {
