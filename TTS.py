@@ -82,8 +82,7 @@ class SpeechGenerator:
     def __init__(self, provider='gtts'):
         self.provider = provider
         if provider == 'elevenlabs':
-            os.environ["ELEVEN_API_KEY"] = "sk_7e13c835a433beee5d29d710bbbd4898f85f2c49313ebe61"
-    
+            api_key="sk_7e13c835a433beee5d29d710bbbd4898f85f2c49313ebe61"
     def create_gtts_speech(self, phrase, recommendations):
         """Generate speech using free gTTS (Google Text-to-Speech)"""
         # Compose natural, varied speech without repetition
@@ -120,7 +119,7 @@ class SpeechGenerator:
         from elevenlabs.client import ElevenLabs
         from elevenlabs import save
         
-        client = ElevenLabs(api_key=os.environ["ELEVEN_API_KEY"])
+        client = ElevenLabs(api_key=api_key
         
         # Compose natural, varied speech without repetition
         speech = []
