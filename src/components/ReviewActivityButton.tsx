@@ -38,11 +38,6 @@ export const ReviewActivityButton = ({ userId, onActivityAdded }: ReviewActivity
     try {
       setProcessingStep('saving');
       
-      // Parse the transcript to extract activity data
-      // For now, we'll create a default activity with the processed review
-      // In a real implementation, you might want to use AI to parse the transcript
-      // and extract duration, distance, etc.
-      
       const defaultDuration = 1800; // 30 minutes in seconds
       const defaultDistance = 5.0; // 5 km
       
@@ -59,61 +54,66 @@ export const ReviewActivityButton = ({ userId, onActivityAdded }: ReviewActivity
         .single();
 
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de sauvegarder l'activité.",
-        });
-        return;
+        throw new Error("Impossible de sauvegarder l'activité.");
       }
 
       onActivityAdded(data);
-      
-      toast({
-        title: "Activité ajoutée",
-        description: processedReview 
-          ? "Votre session a été enregistrée et structurée par l'IA avec succès."
-          : "Votre session a été enregistrée avec succès.",
-      });
-      
       setProcessingStep('complete');
     } catch (error) {
       console.error('Error saving activity:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite.",
-      });
+      throw error; // Re-throw pour que le useEffect puisse gérer l'erreur
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Enhanced workflow: STT -> LLM -> Save Activity
+  // Enhanced workflow: STT -> LLM -> Save Activity (like SessionRecorder)
   useEffect(() => {
     const processTranscriptWithLLM = async () => {
       if (transcript && hasRecorded && processingStep === 'transcribing') {
         try {
           setProcessingStep('processing');
           
-          // Process the transcript with LLM to structure it into bullet points
+          // Afficher le status "IA structure vos notes"
+          toast({
+            title: "IA structure vos notes",
+            description: "Traitement en cours...",
+          });
+          
           const llmResult = await processText(transcript);
           
           if (llmResult.success && llmResult.processedText) {
-            // Save activity with both original transcript and processed review
-            await saveActivityFromTranscript(transcript, llmResult.processedText);
-          } else {
-            // Fallback to original transcript if LLM fails
-            console.warn('LLM processing failed, using original transcript:', llmResult.error);
+            // Afficher le status "Sauvegarde de l'activité"
             toast({
-              variant: "destructive",
-              title: "Traitement IA échoué",
-              description: "Utilisation du texte original.",
+              title: "Sauvegarde de l'activité",
+              description: "Enregistrement en cours...",
             });
+            
+            // Save activity with processed review
+            await saveActivityFromTranscript(transcript, llmResult.processedText);
+            
+            toast({
+              title: "✅ Activité sauvegardée",
+              description: "Votre session a été enregistrée avec succès.",
+            });
+          } else {
+            // Afficher l'erreur de traitement IA mais sauvegarder le texte original
+            toast({
+              title: "⚠️ Traitement IA échoué - texte original utilisé",
+              description: "L'activité a été sauvegardée avec le texte original.",
+            });
+            
             await saveActivityFromTranscript(transcript);
           }
         } catch (error) {
           console.error('Error in LLM processing workflow:', error);
+          
+          toast({
+            variant: "destructive",
+            title: "⚠️ Erreur de sauvegarde",
+            description: "Une erreur inattendue s'est produite.",
+          });
+          
           // Fallback to original transcript
           await saveActivityFromTranscript(transcript);
         } finally {

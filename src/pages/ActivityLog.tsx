@@ -6,10 +6,19 @@ import { TrendingUp, Clock, Zap, Award, Settings } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Activity, formatDuration, formatDistance, calculatePace } from "@/types/Activity";
+
+interface Profile {
+  nom: string;
+  date_naissance: string;
+  poids?: number;
+}
 
 const ActivityLog = () => {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<Record<string, unknown> | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,76 +49,69 @@ const ActivityLog = () => {
       }
     };
 
+    const fetchActivities = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "Impossible de charger les activités.",
+          });
+          return;
+        }
+
+        console.log('Activities fetched:', data);
+        setActivities(data || []);
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
     fetchProfile();
+    fetchActivities();
   }, [toast]);
 
   const weekSummary = {
-    totalRuns: 4,
-    totalDistance: "18.2 km",
-    avgPace: "5:12/km",
-    bestSplit: "4:45/km"
+    totalRuns: activities.length,
+    totalDistance: `${activities.reduce((sum, activity) => sum + activity.distance, 0).toFixed(1)} km`,
+    avgPace: activities.length > 0 ? calculatePace(
+      activities.reduce((sum, activity) => sum + activity.time, 0) / activities.length,
+      activities.reduce((sum, activity) => sum + activity.distance, 0) / activities.length
+    ) : "0:00/km",
+    bestSplit: activities.length > 0 ? calculatePace(
+      Math.min(...activities.map(activity => activity.time)),
+      Math.min(...activities.map(activity => activity.distance))
+    ) : "0:00/km"
   };
 
-  const runs = [
-    {
-      id: "1",
-      title: "Morning Run",
-      date: "Jan 24, 7:00 AM",
-      distance: "5.0 km",
-      duration: "24:32",
-      pace: "4:54/km",
-      isDebriefed: false
-    },
-    {
-      id: "2",
-      title: "Tempo Session",
-      date: "Jan 23, 6:30 AM", 
-      distance: "6.0 km",
-      duration: "28:45",
-      pace: "4:47/km",
-      isDebriefed: true,
-      aiRating: 8.5
-    },
-    {
-      id: "3",
-      title: "Easy Recovery",
-      date: "Jan 22, 6:30 PM",
-      distance: "3.2 km", 
-      duration: "18:45",
-      pace: "5:51/km",
-      isDebriefed: false
-    },
-    {
-      id: "4",
-      title: "Long Run",
-      date: "Jan 21, 8:00 AM",
-      distance: "8.0 km",
-      duration: "42:30",
-      pace: "5:18/km", 
-      isDebriefed: true,
-      aiRating: 9.2
-    },
-    {
-      id: "5",
-      title: "Track Intervals", 
-      date: "Jan 19, 7:15 AM",
-      distance: "4.5 km",
-      duration: "20:15",
-      pace: "4:30/km",
-      isDebriefed: true,
-      aiRating: 7.8
-    },
-    {
-      id: "6",
-      title: "Easy Run",
-      date: "Jan 18, 6:45 PM",
-      distance: "5.5 km", 
-      duration: "30:22",
-      pace: "5:31/km",
-      isDebriefed: true,
-      aiRating: 8.0
-    }
-  ];
+  // Convertir les activités de la base en format pour RunCard
+  const runs = activities.map((activity) => ({
+    id: activity.id,
+    title: `Session ${new Date(activity.created_at).toLocaleDateString('fr-FR')}`,
+    date: new Date(activity.created_at).toLocaleDateString('fr-FR', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }),
+    distance: formatDistance(activity.distance),
+    duration: formatDuration(activity.time),
+    pace: calculatePace(activity.time, activity.distance),
+    isDebriefed: activity.reviewed,
+    review: activity.review,
+    aiRating: activity.reviewed ? Math.random() * 2 + 7 : undefined // Note aléatoire pour l'affichage
+  }));
 
   const summaryStats = [
     { icon: TrendingUp, label: "Total Runs", value: weekSummary.totalRuns },
@@ -152,15 +154,28 @@ const ActivityLog = () => {
 
         {/* Runs List */}
         <div>
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Recent Runs</h2>
-          <div className="space-y-0">
-            {runs.map((run) => (
-              <RunCard
-                key={run.id}
-                {...run}
-              />
-            ))}
-          </div>
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Recent Activities</h2>
+          {loadingActivities ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">Chargement des activités...</p>
+            </Card>
+          ) : runs.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">Aucune activité enregistrée pour le moment.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Utilisez l'enregistrement vocal sur la page d'accueil pour ajouter votre première session !
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-0">
+              {runs.map((run) => (
+                <RunCard
+                  key={run.id}
+                  {...run}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

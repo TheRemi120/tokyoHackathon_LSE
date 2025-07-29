@@ -11,6 +11,7 @@ interface RunCardProps {
   duration: string;
   pace: string;
   isDebriefed: boolean;
+  review?: string;
   aiRating?: number;
   isPending?: boolean;
   onRecordDebrief?: (id: string) => void;
@@ -25,6 +26,7 @@ export const RunCard = ({
   duration, 
   pace, 
   isDebriefed, 
+  review,
   aiRating,
   isPending = false,
   onRecordDebrief,
@@ -93,6 +95,17 @@ export const RunCard = ({
       <p className="text-sm text-muted-foreground">
         {distance} · {duration} · {pace}
       </p>
+      
+      {/* Afficher le texte de la review traité par l'IA */}
+      {isDebriefed && review && (
+        <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+          <h4 className="font-medium text-sm text-foreground mb-2">Notes de session :</h4>
+          <div className="text-sm text-muted-foreground whitespace-pre-line">
+            {review}
+          </div>
+        </div>
+      )}
+      
       {!isDebriefed && (
         <p className="text-xs text-muted-foreground mt-2">Debrief pending</p>
       )}
