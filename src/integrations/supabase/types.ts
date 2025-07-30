@@ -21,6 +21,7 @@ export type Database = {
           id: string
           review: string | null
           reviewed: boolean
+          score: number | null
           time: number | null
           updated_at: string
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           review?: string | null
           reviewed?: boolean
+          score?: number | null
           time?: number | null
           updated_at?: string
           user_id: string
@@ -41,6 +43,7 @@ export type Database = {
           id?: string
           review?: string | null
           reviewed?: boolean
+          score?: number | null
           time?: number | null
           updated_at?: string
           user_id?: string

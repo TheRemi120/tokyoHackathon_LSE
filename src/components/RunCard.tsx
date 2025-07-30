@@ -12,7 +12,7 @@ interface RunCardProps {
   pace: string;
   isDebriefed: boolean;
   review?: string;
-  aiRating?: number;
+  aiRating?: number | null;
   isPending?: boolean;
   onRecordDebrief?: (id: string) => void;
   onTypeDebrief?: (id: string) => void;

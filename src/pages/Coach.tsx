@@ -2,11 +2,14 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, Scale, Target, Mic, Send, BarChart3, FileText, Trophy, Shield } from "lucide-react";
+import { TrendingUp, Scale, Target, Mic, Send, BarChart3, FileText, Trophy, Shield, Brain, Volume2 } from "lucide-react";
 import { useState } from "react";
+import { useAICoach } from "@/hooks/useAICoach";
 
 const Coach = () => {
   const [message, setMessage] = useState("");
+  const [coachingMessage, setCoachingMessage] = useState("");
+  const { generateCoaching, isGenerating, isPlaying } = useAICoach();
   
   const insights = [
     { icon: TrendingUp, value: "+2.3%", label: "Weekly Progress" },
@@ -49,6 +52,11 @@ const Coach = () => {
     }
   };
 
+  const handleAICoachClick = async () => {
+    const coaching = await generateCoaching();
+    setCoachingMessage(coaching);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20 font-sf">
       <Header title="AI Running Coach" />
@@ -66,6 +74,34 @@ const Coach = () => {
             ))}
           </div>
         </div>
+
+        {/* AI Coach Button */}
+        <div>
+          <Button 
+            onClick={handleAICoachClick}
+            disabled={isGenerating}
+            className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold"
+          >
+            <Brain size={20} className="mr-2" />
+            {isGenerating ? "Analyzing Performance..." : "Get AI Coaching"}
+            {isPlaying && <Volume2 size={16} className="ml-2 animate-pulse" />}
+          </Button>
+        </div>
+
+        {/* AI Coaching Message */}
+        {coachingMessage && (
+          <Card className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Brain size={16} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-purple-900 mb-2">Your AI Coach Says:</h3>
+                <p className="text-sm text-purple-800 leading-relaxed">{coachingMessage}</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Chat Feed */}
         <div>
