@@ -26,6 +26,7 @@ export function useHFLLM() {
       }
 
       console.log('Processing transcript with new HF API:', transcript.substring(0, 50) + '...');
+      console.log('Distance:', distance, 'Duration:', duration);
 
       // Try the new chat completions API first with the new system prompt
       if (distance && duration) {
@@ -36,23 +37,63 @@ export function useHFLLM() {
             review_text: transcript
           };
 
-          const systemPrompt = `You are a fitness activity summarizer and evaluator. You will receive an input JSON object with these fields:
-- distance_km: number (distance run in kilometers)
-- duration_min: number (time taken in minutes)
-- review_text: string (the user's spoken review)
+          console.log('Sending to LLM:', inputData);
+
+          const systemPrompt = `You are an expert fitness coach and performance analyst. You will receive an input JSON object with these fields:
+- distance_km: number (distance covered in kilometers)
+- duration_min: number (total workout time in minutes)
+- review_text: string (the user's spoken feedback about their training session)
 
 Your tasks:
-1. Extract and structure the key ideas from review_text into concise bullet points.
-2. Assign a performance score from 1 to 10, based on the ratio distance_km/duration_min and the qualitative feedback in review_text. A higher ratio and stronger positive feedback should yield a higher score.
-3. Return a JSON object with exactly these two properties:
+1. Extract and structure the key insights from review_text into clear, concise bullet points
+2. Calculate a comprehensive performance score from 1-10 using this weighted scoring system:
+
+SCORING FRAMEWORK (Total = 10 points):
+
+A) SUBJECTIVE WELL-BEING (4 points - 40%):
+   - Energy levels during workout (felt strong/weak, energetic/tired)
+   - Motivation and mental state (excited, focused, struggling mentally)
+   - Post-workout satisfaction (proud, accomplished, disappointed)
+   - Overall enjoyment of the session
+
+B) PHYSICAL PERFORMANCE (3 points - 30%):
+   - Pace efficiency: Calculate minutes per km (duration_min ÷ distance_km)
+     * <5 min/km = excellent (2.5-3 pts)
+     * 5-6 min/km = good (2-2.5 pts)  
+     * 6-7 min/km = moderate (1.5-2 pts)
+     * >7 min/km = needs improvement (1-1.5 pts)
+   - Endurance and consistency throughout the session
+   - Technique and form mentions
+
+C) GOAL ACHIEVEMENT (2 points - 20%):
+   - Whether they met their intended distance/time targets
+   - Progress compared to previous sessions (if mentioned)
+   - Challenge level appropriateness (too easy/hard/just right)
+
+D) RECOVERY INDICATORS (1 point - 10%):
+   - Fatigue levels during and after
+   - Any pain, discomfort, or exceptional recovery
+   - Sleep quality or preparation mentions
+
+SCORING EXAMPLES:
+- 9-10: "Felt amazing, crushed my pace goals, could have gone longer"
+- 7-8: "Good solid run, felt strong most of the way, happy with performance"  
+- 5-6: "Okay session, struggled a bit but completed the distance"
+- 3-4: "Tough day, felt tired, pace was slower than usual"
+- 1-2: "Really struggled, had to stop multiple times, felt awful"
+
+3. Return a JSON object with exactly these properties:
    {
      "bullet_points": [ ... ],
      "score": integer
    }
 
-Ensure:
-- bullet_points are succinct, clear, each starting with a hyphen.
-- score is an integer between 1 and 10.`;
+Requirements:
+- bullet_points: 3-5 concise points capturing physical and emotional experience
+- Each bullet point starts with a hyphen (-)
+- score: integer from 1-10 reflecting holistic training quality
+- Prioritize user's subjective experience over raw performance metrics
+- A slower pace can still score high if the user felt great and achieved personal goals`;
 
           const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
             method: "POST",
@@ -79,11 +120,14 @@ Ensure:
 
           if (response.ok) {
             const data = await response.json();
+            console.log('LLM API Response:', data);
             const rawContent = data.choices[0]?.message?.content || '';
+            console.log('Raw LLM content:', rawContent);
             
             try {
               // Try to parse the JSON response
               const parsedResult = JSON.parse(rawContent);
+              console.log('Parsed LLM result:', parsedResult);
               if (parsedResult.bullet_points && parsedResult.score) {
                 const formattedText = parsedResult.bullet_points
                   .map((point: string) => point.startsWith('-') ? point : `- ${point}`)
@@ -97,10 +141,11 @@ Ensure:
                 };
               }
             } catch (parseError) {
-              console.warn('Failed to parse LLM JSON response, using fallback');
+              console.warn('Failed to parse LLM JSON response, using fallback. Parse error:', parseError);
+              console.warn('Raw content that failed to parse:', rawContent);
             }
           } else {
-            console.warn('New API failed, trying fallback approach');
+            console.warn('New API failed, trying fallback approach. Status:', response.status, 'StatusText:', response.statusText);
           }
         } catch (err) {
           console.warn('New API error, trying fallback:', err);
@@ -131,13 +176,34 @@ Ensure:
       // Calculate basic score if distance and duration are provided
       if (distance && duration) {
         const pace = duration / distance; // minutes per km
-        // Basic scoring: faster pace = higher score (typical running pace is 5-8 min/km)
-        if (pace <= 4) score = 9;
-        else if (pace <= 5) score = 8;
-        else if (pace <= 6) score = 7;
-        else if (pace <= 7) score = 6;
-        else if (pace <= 8) score = 5;
-        else score = 4;
+        let paceScore = 5; // Base score for pace
+        
+        // Pace-based scoring (30% weight in final score)
+        if (pace <= 4) paceScore = 9;
+        else if (pace <= 5) paceScore = 8;
+        else if (pace <= 6) paceScore = 7;
+        else if (pace <= 7) paceScore = 6;
+        else if (pace <= 8) paceScore = 5;
+        else paceScore = 4;
+        
+        // Sentiment analysis of transcript (70% weight in final score)
+        const lowerTranscript = transcript.toLowerCase();
+        let sentimentScore = 5; // Base sentiment score
+        
+        // Positive indicators
+        const positiveWords = ['great', 'good', 'amazing', 'strong', 'easy', 'comfortable', 'energetic', 'motivated', 'excellent', 'fantastic', 'smooth', 'effortless', 'powerful', 'confident'];
+        const negativeWords = ['tired', 'exhausted', 'difficult', 'struggled', 'hard', 'painful', 'slow', 'terrible', 'awful', 'weak', 'heavy', 'sluggish', 'unmotivated'];
+        
+        const positiveMatches = positiveWords.filter(word => lowerTranscript.includes(word)).length;
+        const negativeMatches = negativeWords.filter(word => lowerTranscript.includes(word)).length;
+        
+        // Adjust sentiment score based on word analysis
+        sentimentScore += (positiveMatches * 0.8) - (negativeMatches * 0.8);
+        sentimentScore = Math.max(1, Math.min(10, sentimentScore)); // Clamp to 1-10
+        
+        // Combine pace (30%) and sentiment (70%) for final score
+        score = Math.round((paceScore * 0.3) + (sentimentScore * 0.7));
+        score = Math.max(1, Math.min(10, score)); // Ensure score is between 1-10
       }
 
       setIsProcessing(false);

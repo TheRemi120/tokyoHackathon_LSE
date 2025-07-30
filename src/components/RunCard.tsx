@@ -82,7 +82,7 @@ export const RunCard = ({
           <div className="w-3 h-3 bg-green-success rounded-full" />
           <span className="font-semibold text-foreground font-sf">{title}</span>
         </div>
-        {isDebriefed && aiRating && (
+        {isDebriefed && (aiRating !== null && aiRating !== undefined) && (
           <Badge variant="secondary" className="bg-blue-glass text-primary">
             {aiRating}/10 {getRatingEmoji(aiRating)}
           </Badge>

@@ -70,7 +70,7 @@ const ActivityLog = () => {
         }
 
         console.log('Activities fetched:', data);
-        setActivities(data || []);
+        setActivities((data || []) as Activity[]);
       } catch (error) {
         console.error('Error fetching activities:', error);
       } finally {
@@ -84,15 +84,34 @@ const ActivityLog = () => {
 
   const weekSummary = {
     totalRuns: activities.length,
-    totalDistance: `${activities.reduce((sum, activity) => sum + activity.distance, 0).toFixed(1)} km`,
-    avgPace: activities.length > 0 ? calculatePace(
-      activities.reduce((sum, activity) => sum + activity.time, 0) / activities.length,
-      activities.reduce((sum, activity) => sum + activity.distance, 0) / activities.length
-    ) : "0:00/km",
-    bestSplit: activities.length > 0 ? calculatePace(
-      Math.min(...activities.map(activity => activity.time)),
-      Math.min(...activities.map(activity => activity.distance))
-    ) : "0:00/km"
+    totalDistance: `${activities
+      .filter(activity => activity.distance !== null && activity.distance !== -1)
+      .reduce((sum, activity) => sum + (activity.distance || 0), 0).toFixed(1)} km`,
+    avgPace: (() => {
+      const validActivities = activities.filter(activity => 
+        activity.time !== null && activity.distance !== null && 
+        activity.distance > 0 && activity.time !== -1 && activity.distance !== -1
+      );
+      if (validActivities.length === 0) return "N/A";
+      
+      const avgTime = validActivities.reduce((sum, activity) => sum + (activity.time || 0), 0) / validActivities.length;
+      const avgDistance = validActivities.reduce((sum, activity) => sum + (activity.distance || 0), 0) / validActivities.length;
+      return calculatePace(avgTime, avgDistance);
+    })(),
+    bestSplit: (() => {
+      const validActivities = activities.filter(activity => 
+        activity.time !== null && activity.distance !== null && 
+        activity.distance > 0 && activity.time !== -1 && activity.distance !== -1
+      );
+      if (validActivities.length === 0) return "N/A";
+      
+      const bestActivity = validActivities.reduce((best, current) => {
+        const currentPace = (current.time || 0) / (current.distance || 1);
+        const bestPace = (best.time || 0) / (best.distance || 1);
+        return currentPace < bestPace ? current : best;
+      });
+      return calculatePace(bestActivity.time, bestActivity.distance);
+    })()
   };
 
   // Convertir les activités de la base en format pour RunCard
@@ -110,7 +129,7 @@ const ActivityLog = () => {
     pace: calculatePace(activity.time, activity.distance),
     isDebriefed: activity.reviewed,
     review: activity.review,
-    aiRating: activity.reviewed ? Math.random() * 2 + 7 : undefined // Note aléatoire pour l'affichage
+    aiRating: activity.score || undefined // Use the actual LLM-calculated score from database
   }));
 
   const summaryStats = [
@@ -120,7 +139,7 @@ const ActivityLog = () => {
     { icon: Award, label: "Best Split", value: weekSummary.bestSplit }
   ];
 
-  const handleProfileUpdate = (updatedProfile: Record<string, unknown>) => {
+  const handleProfileUpdate = (updatedProfile: Profile) => {
     setUserProfile(updatedProfile);
   };
 
